@@ -13,18 +13,22 @@
 #include <stdio.h>
 #include <errno.h>
 
-
+/**
+ * Inicializa el socket con los datos del fichero de configuracion, conprobando que se haga correctamente
+ */ 
 int init_socket(int port, int max_size) {
     int socket_descr;
     struct sockaddr_in localaddr;
 
+
     socket_descr = socket(AF_INET, SOCK_STREAM, 0);
-    
 
     if (socket_descr < 0) {
         syslog(LOG_ERR, "Error initializing socket");
         return -1;
     }
+
+    // Queremos que el SO reutilice el socket para no esperar a que lo cierre
     if(setsockopt(socket_descr, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int))!=0){
         printf("(%d)\nError setsockopt\n", errno);
         syslog(LOG_ERR, "Error socket opstions");
@@ -32,9 +36,10 @@ int init_socket(int port, int max_size) {
         return -1;
     }
 
-    localaddr.sin_family = AF_INET;                /* Familia TCP/IP. */
-    localaddr.sin_port = htons(port);       /* Se asigna el puerto. */
-    localaddr.sin_addr.s_addr = htonl(INADDR_ANY); /* Se aceptan todas las direcciones. */
+    //Datos del socket a bindear
+    localaddr.sin_family = AF_INET;
+    localaddr.sin_port = htons(port);
+    localaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     bzero((void *) &(localaddr.sin_zero), 8);
 
     if (bind(socket_descr, (struct sockaddr*)&localaddr, sizeof(localaddr)) < 0) {
@@ -44,6 +49,7 @@ int init_socket(int port, int max_size) {
         return -1;
     }
     
+    //Socket en modo listen
     if (listen(socket_descr, max_size) < 0) {
         syslog(LOG_ERR, "Error listening");
         close(socket_descr);
@@ -55,6 +61,9 @@ int init_socket(int port, int max_size) {
 
 }
 
+/**
+ * Accepts a connectiong through the socket
+ */ 
 int accept_socket(int socket_descr){
 
     int val, len;

@@ -1,11 +1,11 @@
 #ifndef SOCKETS_H
 #define SOCKETS_H
 
-/*
-* Fichero:  sockets.h
-* Autores:  Carlos García Toledano 
-*           Samai García González
-*/
+/**
+ * Sockets.h se encarga de abrir los sockets y escuchar las peticiones.
+ * @author Carlos Garcia
+ * @author Samai Garcia
+ * */
 
 
 /*

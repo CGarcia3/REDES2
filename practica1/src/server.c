@@ -11,20 +11,21 @@
 #include <signal.h>
 #include <unistd.h>
 #include "confuse.h"
-/**/
 
 #define MAX 80
 #define SA struct sockaddr
 
 int sockfd, connection_fd;
 
+/** 
+ * En caso de SIGINT, queremos que cierre los descriptores de forma correcta
+*/
 void termination_handler (int signum){
     close(connection_fd);
     close(sockfd);
     exit(0);
 }
    
-// Driver function
 int main()
 {
     int pid, i;
@@ -34,6 +35,7 @@ int main()
 
     struct sigaction new_action, old_action;
 
+    // Leemos fichero de configuraciones y guardamos los datos
     pf = fopen("server.conf", "r");
     if(pf == NULL){
         syslog(LOG_ERR, "Error abriendo fichero server.conf");
@@ -70,7 +72,7 @@ int main()
     }
     fclose(pf);
 
-    /* Set up the structure to specify the new action. */
+    // Configuramos la respuesta al SIGINT
     new_action.sa_handler = termination_handler;
     sigemptyset (&new_action.sa_mask);
     new_action.sa_flags = 0;
@@ -80,8 +82,7 @@ int main()
         sigaction (SIGINT, &new_action, NULL);
 
    
-    // socket create and verification
-
+    // Inicializamos el socket
     sockfd = init_socket(listen_port, max_clients);
     if(sockfd == -1){
         printf("Error abriendo socket.");
@@ -89,6 +90,8 @@ int main()
         return -1;
     }
 
+    // Loop principal, cada vez que recibamos una peticion se crea un proceso
+    // con fork para que la atienda.
     while (1){
         
         connection_fd = accept_socket(sockfd);
@@ -102,10 +105,7 @@ int main()
         }
         close(connection_fd);
     }
-
-
-
-   
-    // After chatting close the socket
     close(sockfd);
+    
+    return 1;
 }
