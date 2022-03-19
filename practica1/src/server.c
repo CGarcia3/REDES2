@@ -11,7 +11,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include "confuse.h"
-
+/**/
 
 #define MAX 80
 #define SA struct sockaddr
