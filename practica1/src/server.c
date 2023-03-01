@@ -16,6 +16,7 @@
 #define SA struct sockaddr
 
 int sockfd, connection_fd;
+char* server_root, *server_signature;
 
 /** 
  * En caso de SIGINT, queremos que cierre los descriptores de forma correcta
@@ -23,17 +24,34 @@ int sockfd, connection_fd;
 void termination_handler (int signum){
     close(connection_fd);
     close(sockfd);
+    free(server_root);
+    free(server_signature);
     exit(0);
 }
-   
+
 int main()
 {
     int pid, i;
-    char* server_root, *server_signature, conf[1024], *tok;
+    char conf[1024], *tok;
     unsigned long listen_port=1, max_clients=1;
     FILE *pf=NULL;
 
     struct sigaction new_action, old_action;
+
+    chroot("/www/");
+
+    // Demonizamos proceso
+    pid_t pid_daemon;
+    pid_daemon = fork();
+    
+    if (pid_daemon > 0) exit(EXIT_SUCCESS);
+    printf("PID del proceso: %d.\n", getpid());
+    if(setsid() < 0){
+        exit(EXIT_FAILURE);
+    }
+    close(STDIN_FILENO); 
+    close(STDOUT_FILENO); 
+    close(STDERR_FILENO);
 
     // Leemos fichero de configuraciones y guardamos los datos
     pf = fopen("server.conf", "r");
@@ -85,7 +103,7 @@ int main()
     // Inicializamos el socket
     sockfd = init_socket(listen_port, max_clients);
     if(sockfd == -1){
-        printf("Error abriendo socket.");
+        syslog(LOG_ERR, "Error abriendo socket.");
         close(sockfd);
         return -1;
     }
@@ -104,8 +122,6 @@ int main()
             exit(EXIT_SUCCESS);
         }
         close(connection_fd);
-    }
-    close(sockfd);
-    
+    }    
     return 1;
 }

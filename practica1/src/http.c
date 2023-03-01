@@ -52,7 +52,8 @@ int process_petitions(int sockfd, char* server_signature, char* server_root){
           return -1;
   }
 
-  printf("request is %d bytes long\n", pret);
+  // Print requests info for debugging
+  /*printf("request is %d bytes long\n", pret);
   printf("method is %.*s\n", (int)method_len, method);
   printf("path is %.*s\n", (int)path_len, path);
   printf("HTTP version is 1.%d\n", minor_version);
@@ -60,7 +61,7 @@ int process_petitions(int sockfd, char* server_signature, char* server_root){
   for (int i = 0; i != num_headers; ++i) {
       printf("%.*s: %.*s\n", (int)headers[i].name_len, headers[i].name,
             (int)headers[i].value_len, headers[i].value);
-  }
+  }*/
   
   // Guardamos de forma correcta el método y el path
   sprintf(aux_method, "%.*s", (int)method_len, method);
@@ -159,7 +160,7 @@ void GET(int sockfd, char* path, char* server_signature, char* server_root){
     size = fread(res_scr, 1024, 1, pf);
     pclose(pf);
 
-    // Abrimos el fichero con fread para ver el tamañodddddddddddddddddd
+    // Abrimos el fichero con fread para ver el tamaño
     pf=fopen(fullpath, "r");
     if(!pf){
       sprintf(res, "%.*s", (int) strlen(ctime(&t))-1, ctime(&t));
@@ -190,7 +191,7 @@ void GET(int sockfd, char* path, char* server_signature, char* server_root){
   }else{
 
     //Guardamos el path
-    fullpath = (char*)malloc(sizeof(char)*(strlen(path)+strlen(server_root)));
+    fullpath = (char*)malloc(sizeof(char)*(strlen(path)+strlen(server_root) + 1));
     strcpy(fullpath, server_root);
     strcat(fullpath, path);
     pf = fopen(fullpath, "r");
@@ -200,6 +201,7 @@ void GET(int sockfd, char* path, char* server_signature, char* server_root){
       enviar_cabecera_http_404(sockfd, server_signature, strlen(buf), res);
       send(sockfd, buf, sizeof(buf), 0);
       syslog(LOG_ERR, "Error abriendo fichero. No encontrado\n");
+      free(fullpath);
       return;
     }
     
@@ -213,6 +215,8 @@ void GET(int sockfd, char* path, char* server_signature, char* server_root){
       strcpy(buf, "<html><p>400 Bad Request</p></html>");
       enviar_cabecera_http_400(sockfd, server_signature, strlen(buf), res);
       send(sockfd, buf, sizeof(buf), 0);
+      free(fullpath);
+      fclose(pf);
       return;
     }
 
@@ -232,6 +236,7 @@ void GET(int sockfd, char* path, char* server_signature, char* server_root){
   }
   
   // Liberamos recursos usados
+  fclose(pf);
   free(fullpath);
 }
 
